@@ -228,8 +228,8 @@
         let lanePositions = [];
         const SPRITE_SIZE = 105;
 
-        // Carpeta real de imágenes en el repositorio (con tilde, tal cual está en GitHub)
-        const RUTA_IMG = 'imágenes/';
+        // Carpeta real de imágenes en el repositorio (sin tilde)
+        const RUTA_IMG = 'imagenes/';
 
         const escaleras = [new Image(), new Image(), new Image(), new Image(), new Image(), new Image()];
         escaleras[0].src = RUTA_IMG + 'Escalera París.png'; escaleras[1].src = RUTA_IMG + 'Escalera París1.png';
@@ -618,8 +618,18 @@
                 }
             }
 
-            if (escaleras[idxActual]?.complete) ctx.drawImage(escaleras[idxActual], 0, scrollY, canvas.width, canvas.height);
-            if (escaleras[idxSiguiente]?.complete) ctx.drawImage(escaleras[idxSiguiente], 0, scrollY - canvas.height, canvas.width, canvas.height);
+            const fondoActual = escaleras[idxActual];
+            const fondoSiguiente = escaleras[idxSiguiente];
+            if (fondoActual?.complete && fondoActual.naturalWidth > 0) {
+                ctx.drawImage(fondoActual, 0, scrollY, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, scrollY, canvas.width, canvas.height);
+            }
+            if (fondoSiguiente?.complete && fondoSiguiente.naturalWidth > 0) {
+                ctx.drawImage(fondoSiguiente, 0, scrollY - canvas.height, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, scrollY - canvas.height, canvas.width, canvas.height);
+            }
 
             const lvlText = currentLevel > 10 ? `Nivel: ULTRA 🔥 | Pts: ${score}` : `Nivel: ${currentLevel}/10 🗼 | Pts: ${score}`;
             if (lvlText !== hudStatsLeftCache) { hudStatsLeftCache = lvlText; hudStatsLeftEl.innerText = lvlText; }
@@ -630,7 +640,7 @@
 
             for (let i = alerts.length - 1; i >= 0; i--) {
                 let al = alerts[i]; if (!player.isCrashing) al.duration--;
-                if (imgJePasse?.complete) ctx.drawImage(imgJePasse, lanePositions[al.lane] - 36, al.y, 72, 48);
+                if (imgJePasse?.complete && imgJePasse.naturalWidth > 0) ctx.drawImage(imgJePasse, lanePositions[al.lane] - 36, al.y, 72, 48);
                 if (al.duration <= 0) {
                     obstacles.push({ lane: al.lane, x: lanePositions[al.lane], targetX: lanePositions[al.lane], y: canvas.height + 60, type: 'corredor', variant: Math.floor(Math.random() * 3), width: SPRITE_SIZE, height: SPRITE_SIZE, speed: -worldSpeed * 1.25 });
                     alerts.splice(i, 1);
