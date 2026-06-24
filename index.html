@@ -24,7 +24,7 @@
         #hud-cocidos { white-space: nowrap; color: #f1c40f; }
         #hud-players { white-space: nowrap; color: #5dade2; }
         canvas { flex-grow: 1; width: 100%; background: #000; image-rendering: pixelated; }
-        
+
         #level-banner {
             position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%);
             color: #fff; font-family: 'Courier New', Courier, monospace; font-size: 32px;
@@ -53,7 +53,7 @@
             font-weight: bold; color: #ff0055; margin-bottom: 12px; line-height: 1.3;
         }
         .score-highlight { color: #f1c40f; font-weight: bold; font-size: 22px; display: block; margin: 8px 0; }
-        
+
         .go-input, .go-select {
             padding: 10px; width: 100%; margin-bottom: 12px; border-radius: 6px;
             border: 1px solid #555; background: #222; color: #fff; text-align: center; font-size: 15px;
@@ -62,6 +62,7 @@
             display: block; width: 100%; padding: 11px; margin: 6px 0;
             border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;
         }
+        .go-btn:disabled { opacity: 0.6; cursor: default; }
         .btn-whatsapp { background-color: #25D366; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; }
         .btn-cert { background-color: #00ffcc; color: #000; }
         .btn-rank { background-color: #2980b9; color: #fff; }
@@ -76,10 +77,84 @@
         #rankingList li:nth-child(1) { color: #f1c40f; font-weight: bold; font-size: 16px; }
         .rank-item-left { display: flex; gap: 8px; align-items: center; }
         .rank-pos { width: 24px; font-weight: bold; }
+        #cert-numero { color: #888; font-size: 12px; display: block; margin-top: -4px; margin-bottom: 10px; }
     </style>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore, doc, getDoc, setDoc, updateDoc, increment, runTransaction,
+            onSnapshot, collection, addDoc, query, orderBy, limit, getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // IMPORTANTE: revisa estos valores en Firebase > Configuración del proyecto.
+        // El messagingSenderId y appId no coincidían entre tus dos versiones del archivo;
+        // dejé los de 12 dígitos (formato estándar), pero conviene que los confirmes.
+        const firebaseConfig = {
+            apiKey: "AIzaSyARwzSFBfViQEo2mcVRvieMy2nuUiDYXqs",
+            authDomain: "chipa-viajera.firebaseapp.com",
+            projectId: "chipa-viajera",
+            storageBucket: "chipa-viajera.firebasestorage.app",
+            messagingSenderId: "533357296369",
+            appId: "1:533357296369:web:97f7f9ad1c5b7664658750"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const refEstadisticas = doc(db, "metadatos", "estadisticas");
+
+        async function registrarJugador() {
+            try {
+                await updateDoc(refEstadisticas, { totalJugadores: increment(1) });
+            } catch (e) {
+                try {
+                    await setDoc(refEstadisticas, { totalJugadores: 1 }, { merge: true });
+                } catch (e2) {
+                    console.error("No se pudo registrar el jugador:", e2);
+                }
+            }
+        }
+        registrarJugador();
+
+        onSnapshot(refEstadisticas, (snap) => {
+            const el = document.getElementById("playerCount");
+            if (el && snap.exists()) el.innerText = snap.data().totalJugadores ?? "-";
+        }, (error) => {
+            console.error("Error escuchando el contador mundial:", error);
+        });
+
+        // Numeración atómica de certificados: cada descarga obtiene un número único y secuencial.
+        window.obtenerNumeroCertificado = async function () {
+            const refCert = doc(db, "metadatos", "certificados");
+            try {
+                const numero = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(refCert);
+                    const actual = snap.exists() ? (snap.data().total || 0) : 0;
+                    const siguiente = actual + 1;
+                    tx.set(refCert, { total: siguiente }, { merge: true });
+                    return siguiente;
+                });
+                return numero;
+            } catch (e) {
+                console.error("No se pudo numerar el certificado en linea:", e);
+                return null;
+            }
+        };
+
+        window.guardarEnRanking = async function (nombre, puntos, bandera) {
+            await addDoc(collection(db, "ranking"), {
+                nombre, puntos, bandera, fecha: new Date().toISOString()
+            });
+        };
+
+        window.obtenerTop10 = async function () {
+            const q = query(collection(db, "ranking"), orderBy("puntos", "desc"), limit(10));
+            const snap = await getDocs(q);
+            const resultados = [];
+            snap.forEach((d) => resultados.push(d.data()));
+            return resultados;
+        };
+    </script>
 </head>
 <body>
 
@@ -98,9 +173,9 @@
             <div id="go-stats">
                 <span class="score-highlight" id="final-score">Puntos: 0</span>
             </div>
-            
+
             <input type="text" id="playerName" class="go-input" placeholder="Tu Nombre / Votre Nom" maxlength="12">
-            
+
             <select id="playerCountry" class="go-select">
                 <option value="🇵🇾">Paraguay (🇵🇾)</option>
                 <option value="🇫🇷">France (🇫🇷)</option>
@@ -133,101 +208,76 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyARwzSFBfViQEo2mcVRvieMy2nuUiDYXqs",
-            authDomain: "chipa-viajera.firebaseapp.com",
-            projectId: "chipa-viajera",
-            storageBucket: "chipa-viajera.firebasestorage.app",
-            messagingSenderId: "533357296369",
-            appId: "1:533357296369:web:97f7f9ad1c5b7664658750"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        async function registrarJugador() {
-            try {
-                await db.collection("metadatos").doc("estadisticas").update({
-                    totalJugadores: firebase.firestore.FieldValue.increment(1)
-                });
-            } catch(e) { console.log("Init counter..."); }
-        }
-        registrarJugador();
-
-        db.collection("metadatos").doc("estadisticas").onSnapshot(doc => {
-            if(doc.exists) document.getElementById("playerCount").innerText = doc.data().totalJugadores;
-        });
-    </script>
-
-    <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
 
-        let isPlaying = true; 
+        let isPlaying = true;
         let frameCount = 0;
         let lives = 3;
-        let score = 0; 
+        let score = 0;
         let cocidosCount = 0;
-        
+
         let currentLevel = 1;
-        let worldSpeed = 4; 
-        let spawnRate = 75; 
-        
-        let serieActual = 1; 
-        let idxActual = 0;   
+        let worldSpeed = 4;
+        let spawnRate = 75;
+
+        let serieActual = 1;
+        let idxActual = 0;
         let idxSiguiente = 1;
-        let scrollY = 0; 
-        let lanePositions = []; 
-        const SPRITE_SIZE = 105; 
+        let scrollY = 0;
+        let lanePositions = [];
+        const SPRITE_SIZE = 105;
 
-        // --- CARGA DE ASSETS (Rutas Originales) ---
+        // Carpeta real de imágenes en el repositorio (con tilde, tal cual está en GitHub)
+        const RUTA_IMG = 'imágenes/';
+
         const escaleras = [new Image(), new Image(), new Image(), new Image(), new Image(), new Image()];
-        escaleras[0].src = 'Escalera París.png'; escaleras[1].src = 'Escalera París1.png';
-        escaleras[2].src = 'Escalera París2.png'; escaleras[3].src = 'Escalera París3.png';
-        escaleras[4].src = 'Escalera París4.png'; escaleras[5].src = 'Escalera París5.png';
+        escaleras[0].src = RUTA_IMG + 'Escalera París.png'; escaleras[1].src = RUTA_IMG + 'Escalera París1.png';
+        escaleras[2].src = RUTA_IMG + 'Escalera París2.png'; escaleras[3].src = RUTA_IMG + 'Escalera París3.png';
+        escaleras[4].src = RUTA_IMG + 'Escalera París4.png'; escaleras[5].src = RUTA_IMG + 'Escalera París5.png';
 
-        const imgRunD1 = new Image(); imgRunD1.src = 'chipa_run_derecha1.png';
-        const imgRunD2 = new Image(); imgRunD2.src = 'chipa_run_derecha2.png';
-        const imgJumpD = new Image(); imgJumpD.src = 'chipa_jump_derecha.png';
-        const imgRunI1 = new Image(); imgRunI1.src = 'chipa_run_izquierda1.png';
-        const imgRunI2 = new Image(); imgRunI2.src = 'chipa_run_izquierda2.png';
-        const imgJumpI = new Image(); imgJumpI.src = 'chipa_jump_izquierda.png'; 
-        const imgCrash = new Image(); imgCrash.src = 'chipa_crash.png'; 
+        const imgRunD1 = new Image(); imgRunD1.src = RUTA_IMG + 'chipa_run_derecha1.png';
+        const imgRunD2 = new Image(); imgRunD2.src = RUTA_IMG + 'chipa_run_derecha2.png';
+        const imgJumpD = new Image(); imgJumpD.src = RUTA_IMG + 'chipa_jump_derecha.png';
+        const imgRunI1 = new Image(); imgRunI1.src = RUTA_IMG + 'chipa_run_izquierda1.png';
+        const imgRunI2 = new Image(); imgRunI2.src = RUTA_IMG + 'chipa_run_izquierda2.png';
+        const imgJumpI = new Image(); imgJumpI.src = RUTA_IMG + 'chipa_jump_izquierda.png';
+        const imgCrash = new Image(); imgCrash.src = RUTA_IMG + 'chipa_crash.png';
 
-        const maletaAzulA = new Image(); maletaAzulA.src = 'Maleta azulA.png';
-        const maletaAzulB = new Image(); maletaAzulB.src = 'Maleta azulB.png';
-        const maletaRojaA = new Image(); maletaRojaA.src = 'Maleta rojaA.png';
-        const maletaRojaB = new Image(); maletaRojaB.src = 'Maleta rojaB.png';
-        const maletaLilaA = new Image(); maletaLilaA.src = 'Maleta lilaA.png';
-        const maletaLilaB = new Image(); maletaLilaB.src = 'Maleta lilaB.png';
+        const maletaAzulA = new Image(); maletaAzulA.src = RUTA_IMG + 'Maleta azulA.png';
+        const maletaAzulB = new Image(); maletaAzulB.src = RUTA_IMG + 'Maleta azulB.png';
+        const maletaRojaA = new Image(); maletaRojaA.src = RUTA_IMG + 'Maleta rojaA.png';
+        const maletaRojaB = new Image(); maletaRojaB.src = RUTA_IMG + 'Maleta rojaB.png';
+        const maletaLilaA = new Image(); maletaLilaA.src = RUTA_IMG + 'Maleta lilaA.png';
+        const maletaLilaB = new Image(); maletaLilaB.src = RUTA_IMG + 'Maleta lilaB.png';
 
-        const ancianoBaja1 = new Image(); ancianoBaja1.src = 'Ancianos bajando1.png';
-        const ancianoBaja2 = new Image(); ancianoBaja2.src = 'Ancianos bajando2.png';
-        const turistaPesada1 = new Image(); turistaPesada1.src = 'Turista_pesada1.png';
-        const turistaPesada2 = new Image(); turistaPesada2.src = 'Turista_pesada2.png';
-        const señoraBajaA = new Image(); señoraBajaA.src = 'Señora_bajandoA.png';
-        const señoraBajaB = new Image(); señoraBajaB.src = 'Señora_bajandoB.png';
-        const imgParadaFoto = new Image(); imgParadaFoto.src = 'Parada_foto.png';
-        const imgTuristaSentado = new Image(); imgTuristaSentado.src = 'Turista sentado.png';
-        const imgHinchaParaguay = new Image(); imgHinchaParaguay.src = 'hincha de Paraguay.png';
-        const ancianaBolsasA = new Image(); ancianaBolsasA.src = 'Anciana_bolsasA.png';
-        const ancianaBolsasB = new Image(); ancianaBolsasB.src = 'Anciana_bolsasB.png';
-        const empresarioA = new Image(); empresarioA.src = 'EmpresarioA.png';
-        const empresarioB = new Image(); empresarioB.src = 'EmpresarioB.png';
-        const turistaSubeA = new Image(); turistaSubeA.src = 'Subiendo TuristaA.png';
-        const turistaSubeB = new Image(); turistaSubeB.src = 'Subiendo TuristaB.png';
-        const turistaSubeSoloA = new Image(); turistaSubeSoloA.src = 'Turista sube soloA.png'; 
-        const turistaSubeSoloB = new Image(); turistaSubeSoloB.src = 'Turista sube soloB.png';
-        const tazaA = new Image(); tazaA.src = 'TazaA.png';
-        const tazaB = new Image(); tazaB.src = 'TazaB.png';
+        const ancianoBaja1 = new Image(); ancianoBaja1.src = RUTA_IMG + 'Ancianos bajando1.png';
+        const ancianoBaja2 = new Image(); ancianoBaja2.src = RUTA_IMG + 'Ancianos bajando2.png';
+        const turistaPesada1 = new Image(); turistaPesada1.src = RUTA_IMG + 'Turista_pesada1.png';
+        const turistaPesada2 = new Image(); turistaPesada2.src = RUTA_IMG + 'Turista_pesada2.png';
+        const señoraBajaA = new Image(); señoraBajaA.src = RUTA_IMG + 'Señora_bajandoA.png';
+        const señoraBajaB = new Image(); señoraBajaB.src = RUTA_IMG + 'Señora_bajandoB.png';
+        const imgParadaFoto = new Image(); imgParadaFoto.src = RUTA_IMG + 'Parada_foto.png';
+        const imgTuristaSentado = new Image(); imgTuristaSentado.src = RUTA_IMG + 'Turista sentado.png';
+        const imgHinchaParaguay = new Image(); imgHinchaParaguay.src = RUTA_IMG + 'hincha de Paraguay.png';
+        const ancianaBolsasA = new Image(); ancianaBolsasA.src = RUTA_IMG + 'Anciana_bolsasA.png';
+        const ancianaBolsasB = new Image(); ancianaBolsasB.src = RUTA_IMG + 'Anciana_bolsasB.png';
+        const empresarioA = new Image(); empresarioA.src = RUTA_IMG + 'EmpresarioA.png';
+        const empresarioB = new Image(); empresarioB.src = RUTA_IMG + 'EmpresarioB.png';
+        const turistaSubeA = new Image(); turistaSubeA.src = RUTA_IMG + 'Subiendo TuristaA.png';
+        const turistaSubeB = new Image(); turistaSubeB.src = RUTA_IMG + 'Subiendo TuristaB.png';
+        const turistaSubeSoloA = new Image(); turistaSubeSoloA.src = RUTA_IMG + 'Turista sube soloA.png';
+        const turistaSubeSoloB = new Image(); turistaSubeSoloB.src = RUTA_IMG + 'Turista sube soloB.png';
+        const tazaA = new Image(); tazaA.src = RUTA_IMG + 'TazaA.png';
+        const tazaB = new Image(); tazaB.src = RUTA_IMG + 'TazaB.png';
 
         const corredoresCarga = [
             { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }
         ];
-        corredoresCarga[0].c1.src = 'Corredor_sube_Corre1.png'; corredoresCarga[0].c2.src = 'Corredor_sube_Corre2.png';
-        corredoresCarga[1].c1.src = 'Corredora_sube_Rojo1.png'; corredoresCarga[1].c2.src = 'Corredora_sube_Rojo2.png';
-        corredoresCarga[2].c1.src = 'Corredora_sube_Corre1.png'; corredoresCarga[2].c2.src = 'Corredora_sube_Corre2.png';
-        const imgJePasse = new Image(); imgJePasse.src = 'Je_passe.png';
+        corredoresCarga[0].c1.src = RUTA_IMG + 'Corredor_sube_Corre1.png'; corredoresCarga[0].c2.src = RUTA_IMG + 'Corredor_sube_Corre2.png';
+        corredoresCarga[1].c1.src = RUTA_IMG + 'Corredora_sube_Rojo1.png'; corredoresCarga[1].c2.src = RUTA_IMG + 'Corredora_sube_Rojo2.png';
+        corredoresCarga[2].c1.src = RUTA_IMG + 'Corredora_sube_Corre1.png'; corredoresCarga[2].c2.src = RUTA_IMG + 'Corredora_sube_Corre2.png';
+        const imgJePasse = new Image(); imgJePasse.src = RUTA_IMG + 'Je_passe.png';
 
         const player = {
             lane: 1, x: 0, y: 0,
@@ -245,26 +295,36 @@
 
         function resizeCanvas() {
             canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-            player.y = canvas.height - 130; 
+            player.y = canvas.height - 130;
             let w = canvas.width;
             lanePositions = [w * 0.22, w * 0.38, w * 0.50, w * 0.62, w * 0.78];
             player.x = lanePositions[player.lane];
         }
-        
-        window.addEventListener('load', () => { 
-            resizeCanvas(); 
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
             precargarAssets().then(() => {
-                document.getElementById("loading-screen").style.display = "none";
-                showLevelBanner(); loop();
+                const pantallaCarga = document.getElementById("loading-screen");
+                if (pantallaCarga) pantallaCarga.style.display = "none";
+                showLevelBanner();
+                loop();
             });
         });
         window.addEventListener('resize', resizeCanvas);
 
         function precargarAssets() {
-            const todasLasImagenes = [...escaleras, imgRunD1, imgRunD2, imgJumpD, imgRunI1, imgRunI2, imgJumpI, imgCrash, maletaAzulA, maletaAzulB, maletaRojaA, maletaRojaB, maletaLilaA, maletaLilaB, ancianoBaja1, ancianoBaja2, turistaPesada1, turistaPesada2, señoraBajaA, señoraBajaB, imgParadaFoto, imgTuristaSentado, imgHinchaParaguay, ancianaBolsasA, ancianaBolsasB, empresarioA, empresarioB, turistaSubeA, turistaSubeB, turistaSubeSoloA, turistaSubeSoloB, tazaA, tazaB, imgJePasse, ...corredoresCarga.flatMap(c => [c.c1, c.c2])];
+            const todasLasImagenes = [
+                ...escaleras, imgRunD1, imgRunD2, imgJumpD, imgRunI1, imgRunI2, imgJumpI, imgCrash,
+                maletaAzulA, maletaAzulB, maletaRojaA, maletaRojaB, maletaLilaA, maletaLilaB,
+                ancianoBaja1, ancianoBaja2, turistaPesada1, turistaPesada2, señoraBajaA, señoraBajaB,
+                imgParadaFoto, imgTuristaSentado, imgHinchaParaguay, ancianaBolsasA, ancianaBolsasB,
+                empresarioA, empresarioB, turistaSubeA, turistaSubeB, turistaSubeSoloA, turistaSubeSoloB,
+                tazaA, tazaB, imgJePasse, ...corredoresCarga.flatMap(c => [c.c1, c.c2])
+            ];
             const promesas = todasLasImagenes.map(img => new Promise(resolve => {
-                if (img.complete && img.naturalWidth > 0) resolve();
-                else { img.addEventListener('load', resolve, { once: true }); img.addEventListener('error', resolve, { once: true }); }
+                const terminar = () => { if (img.decode) img.decode().then(resolve).catch(resolve); else resolve(); };
+                if (img.complete && img.naturalWidth > 0) terminar();
+                else { img.addEventListener('load', terminar, { once: true }); img.addEventListener('error', resolve, { once: true }); }
             }));
             return Promise.race([Promise.all(promesas), new Promise(r => setTimeout(r, 4000))]);
         }
@@ -278,9 +338,12 @@
 
         function showGameOverScreen(won = false) {
             isPlaying = false;
+            window.finalScore = score;
+            window.finalLevel = currentLevel;
+
             document.getElementById("final-score").innerText = `${score} Puntos / Points`;
             const titleEl = document.getElementById("go-title");
-            
+
             if (won) {
                 titleEl.innerHTML = "<span style='color:#00ffcc;'>¡Felicidades! Completaste la subida básica.</span><br><span style='font-size:16px;color:#fff;'>Félicitations! Vous avez terminé la montée de base.</span>";
             } else {
@@ -293,7 +356,8 @@
 
         function actualizarEnlaceWhatsApp() {
             const nombre = document.getElementById("playerName").value.trim() || "Chipa";
-            const textoWA = `¡${nombre} sumó ${score} puntos esquivando turistas en Montmartre con la Chipa Viajera! ¿Podés superarlo? / ${nombre} a obtenu ${score} points à Montmartre! Peux-tu faire mieux? Juntá cocidos acá: [LINK]`;
+            const urlActual = encodeURIComponent(window.location.href);
+            const textoWA = `¡${nombre} sumó ${score} puntos esquivando turistas en Montmartre con la Chipa Viajera! ¿Podés superarlo? / ${nombre} a obtenu ${score} points à Montmartre! Peux-tu faire mieux? ${urlActual}`;
             document.getElementById("btnShareWA").href = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoWA)}`;
         }
         document.getElementById("playerName").addEventListener("input", actualizarEnlaceWhatsApp);
@@ -301,18 +365,19 @@
         document.getElementById("btnSaveRank").addEventListener("click", async () => {
             const nombre = document.getElementById("playerName").value.trim() || "Anónimo";
             const pais = document.getElementById("playerCountry").value;
-            
+            const btn = document.getElementById("btnSaveRank");
+
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
             try {
-                document.getElementById("btnSaveRank").innerText = "Guardando...";
-                await db.collection("ranking").add({
-                    nombre: nombre,
-                    puntos: score,
-                    bandera: pais,
-                    fecha: new Date().toISOString()
-                });
-                document.getElementById("btnSaveRank").style.display = "none";
+                await window.guardarEnRanking(nombre, score, pais);
+                btn.style.display = "none";
                 abrirPanelRanking();
-            } catch(e) { alert("Error de conexión"); }
+            } catch (e) {
+                console.error(e);
+                btn.disabled = false;
+                btn.innerText = "Error, reintentar";
+            }
         });
 
         async function abrirPanelRanking() {
@@ -321,11 +386,10 @@
             document.getElementById("ranking-modal").style.display = "flex";
 
             try {
-                const snapshot = await db.collection("ranking").orderBy("puntos", "desc").limit(10).get();
+                const resultados = await window.obtenerTop10();
                 lista.innerHTML = "";
                 let i = 1;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
+                for (const data of resultados) {
                     const medalla = i === 1 ? "🥇 " : i === 2 ? "🥈 " : i === 3 ? "🥉 " : `${i}. `;
                     lista.innerHTML += `
                         <li>
@@ -337,8 +401,12 @@
                             <span class="rank-pts">${data.puntos} pts</span>
                         </li>`;
                     i++;
-                });
-            } catch(e) { lista.innerHTML = "<li>Error al cargar ranking</li>"; }
+                }
+                if (resultados.length === 0) lista.innerHTML = "<li style='justify-content:center;color:#888;'>Todavía no hay puntajes guardados</li>";
+            } catch (e) {
+                console.error(e);
+                lista.innerHTML = "<li>Error al cargar ranking</li>";
+            }
         }
 
         document.getElementById("btnCloseRank").addEventListener("click", () => {
@@ -346,24 +414,80 @@
         });
         document.getElementById("btnRestartGame").addEventListener("click", () => window.location.reload());
 
-        document.getElementById("btnDownloadCert").addEventListener("click", () => {
+        document.getElementById("btnDownloadCert").addEventListener("click", async () => {
             const nombreCert = document.getElementById("playerName").value.trim() || "Viajero";
+            const puntosCert = window.finalScore ?? score;
+            const btn = document.getElementById("btnDownloadCert");
+            const textoOriginal = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Generando...";
+
+            let numero = null;
+            try {
+                numero = await window.obtenerNumeroCertificado();
+            } catch (e) {
+                console.error(e);
+            }
+            if (numero === null) {
+                // Numeración de respaldo si falla la conexión: queda igual de única para esta sesión.
+                numero = Math.floor(Date.now() / 1000) % 1000000;
+            }
+            const numeroFormateado = String(numero).padStart(6, '0');
+
             const certImg = new Image();
             certImg.crossOrigin = "anonymous";
-            certImg.src = "Certificado de puntos_Montmartre.jpg"; 
-            certImg.onload = function() {
-                const c = document.createElement("canvas");
-                c.width = certImg.naturalWidth; c.height = certImg.naturalHeight;
-                const cx = c.getContext("2d");
-                cx.drawImage(certImg, 0, 0);
-                cx.fillStyle = "#111111"; cx.font = `bold ${c.width * 0.045}px sans-serif`; cx.textAlign = "center";
-                cx.fillText(nombreCert.toUpperCase(), c.width * 0.5, c.height * 0.58);
-                cx.fillStyle = "#d35400"; cx.font = `bold ${c.width * 0.055}px Impact, sans-serif`;
-                cx.fillText(`${score} PUNTOS`, c.width * 0.5, c.height * 0.68);
-                const link = document.createElement("a");
-                link.href = c.toDataURL("image/jpeg", 0.95);
-                link.download = `Certificado_Montmartre_${nombreCert}.jpg`; link.click();
-            };
+            certImg.src = RUTA_IMG + 'Certificado de puntos_Montmartre.jpg';
+
+            function dibujarCertificadoBase(cx, width, height) {
+                const gradiente = cx.createLinearGradient(0, 0, width, height);
+                gradiente.addColorStop(0, '#1a1a2e'); gradiente.addColorStop(1, '#16213e');
+                cx.fillStyle = gradiente; cx.fillRect(0, 0, width, height);
+                cx.strokeStyle = '#f1c40f'; cx.lineWidth = 20; cx.strokeRect(10, 10, width - 20, height - 20);
+                cx.fillStyle = '#f1c40f'; cx.font = `bold ${width * 0.05}px sans-serif`; cx.textAlign = "center";
+                cx.fillText("CERTIFICADO DE EXPERTO", width * 0.5, height * 0.3);
+                cx.fillStyle = '#ffffff'; cx.font = `${width * 0.035}px sans-serif`;
+                cx.fillText("Otorgado con orgullo a:", width * 0.5, height * 0.45);
+            }
+
+            function finalizarDescarga() {
+                try {
+                    const c = document.createElement("canvas");
+                    c.width = certImg.naturalWidth || 1200;
+                    c.height = certImg.naturalHeight || 800;
+                    const cx = c.getContext("2d");
+
+                    if (certImg.complete && certImg.naturalWidth > 0) {
+                        cx.drawImage(certImg, 0, 0);
+                        cx.fillStyle = "#111111"; cx.font = `bold ${c.width * 0.045}px sans-serif`; cx.textAlign = "center";
+                        cx.fillText(nombreCert.toUpperCase(), c.width * 0.5, c.height * 0.58);
+                        cx.fillStyle = "#d35400"; cx.font = `bold ${c.width * 0.055}px sans-serif`;
+                        cx.fillText(`${puntosCert} PUNTOS`, c.width * 0.5, c.height * 0.68);
+                        cx.fillStyle = "#555555"; cx.font = `${c.width * 0.022}px sans-serif`;
+                        cx.fillText(`N.° ${numeroFormateado}`, c.width * 0.5, c.height * 0.78);
+                    } else {
+                        dibujarCertificadoBase(cx, c.width, c.height);
+                        cx.fillStyle = "#f1c40f"; cx.font = `bold ${c.width * 0.05}px sans-serif`; cx.textAlign = "center";
+                        cx.fillText(nombreCert.toUpperCase(), c.width * 0.5, c.height * 0.58);
+                        cx.fillStyle = "#ffffff"; cx.font = `bold ${c.width * 0.045}px sans-serif`;
+                        cx.fillText(`${puntosCert} PUNTOS EN MONTMARTRE`, c.width * 0.5, c.height * 0.70);
+                        cx.fillStyle = "#999999"; cx.font = `${c.width * 0.022}px sans-serif`;
+                        cx.fillText(`N.° ${numeroFormateado}`, c.width * 0.5, c.height * 0.80);
+                    }
+
+                    const link = document.createElement("a");
+                    link.href = c.toDataURL("image/jpeg", 0.95);
+                    link.download = `Certificado_Montmartre_${numeroFormateado}_${nombreCert.replace(/\s+/g, '_')}.jpg`;
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                } catch (e) {
+                    console.error("Error al generar el certificado:", e);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = textoOriginal;
+                }
+            }
+
+            certImg.onload = finalizarDescarga;
+            certImg.onerror = finalizarDescarga;
         });
 
         function handleInput(direction) {
@@ -392,12 +516,12 @@
         function triggerCrash() { player.isCrashing = true; player.crashTimer = 60; lives--; }
 
         function checkLevelProgression() {
-            currentLevel++; 
+            currentLevel++;
             if (currentLevel > 10) {
-                worldSpeed *= 1.15; 
+                worldSpeed *= 1.15;
                 spawnRate = Math.max(20, Math.floor(spawnRate * 0.75));
             } else {
-                worldSpeed += 0.8; 
+                worldSpeed += 0.8;
                 spawnRate = Math.max(35, spawnRate - 6);
             }
             serieActual = 1; score += 500; showLevelBanner();
@@ -410,17 +534,18 @@
                 const selectedLane = validLanes[Math.floor(Math.random() * validLanes.length)];
                 const rand = Math.random();
 
-                if (rand < 0.08) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'cocido', width: SPRITE_SIZE * 0.65, height: SPRITE_SIZE * 0.65, speed: worldSpeed }); } 
+                if (rand < 0.08) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'cocido', width: SPRITE_SIZE * 0.65, height: SPRITE_SIZE * 0.65, speed: worldSpeed }); }
                 else if (rand < 0.20) {
                     let color = Math.random() > 0.66 ? 'roja' : Math.random() > 0.33 ? 'lila' : 'azul';
                     obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'maleta', variant: color, width: SPRITE_SIZE * 0.75, height: SPRITE_SIZE * 0.75, speed: worldSpeed * 1.1 });
-                } 
+                }
                 else if (rand < 0.29) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'anciano', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 1.12 }); }
                 else if (rand < 0.38) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_pesada', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 0.4 }); }
                 else if (rand < 0.47) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'señora', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 1.1 }); }
                 else if (rand < 0.56) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'anciana_bolsas', width: SPRITE_SIZE * 0.85, height: SPRITE_SIZE * 0.85, speed: worldSpeed * 0.35 }); }
                 else if (rand < 0.64) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'empresario', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 1.15 }); }
                 else if (rand < 0.70) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'parada_foto', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed }); }
+                else if (rand < 0.76) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sentado', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed }); }
                 else if (rand < 0.82) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'hincha_paraguay', width: SPRITE_SIZE * 0.8, height: SPRITE_SIZE * 0.8, speed: worldSpeed }); }
                 else if (rand < 0.88) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 0.65 }); }
                 else if (rand < 0.94) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube_solo', width: SPRITE_SIZE, height: SPRITE_SIZE, speed: worldSpeed * 0.85 }); }
@@ -431,7 +556,7 @@
         function aplicarIAEsquive() {
             for (let i = 0; i < obstacles.length; i++) {
                 let obsA = obstacles[i];
-                if (obsA.type === 'parada_foto' || obsA.type === 'turista_sentado' || obsA.type === 'cocido' || obsA.type === 'hincha_paraguay') continue; 
+                if (obsA.type === 'parada_foto' || obsA.type === 'turista_sentado' || obsA.type === 'cocido' || obsA.type === 'hincha_paraguay') continue;
                 for (let j = 0; j < obstacles.length; j++) {
                     if (i === j) continue;
                     let obsB = obstacles[j];
@@ -447,24 +572,22 @@
             }
         }
 
-        // --- LA MAGIA ESTÁ ACÁ: Controlador de Proporciones ---
         function drawImageSafely(img, x, y, baseWidth) {
             if (img && img.complete && img.naturalWidth > 0) {
                 let aspect = img.naturalWidth / img.naturalHeight;
                 let targetWidth = baseWidth;
                 let targetHeight = baseWidth / aspect;
 
-                // Limita la altura máxima para que los turistas no se vuelvan gigantes
-                const MAX_HEIGHT = 100; // Píxeles máximos de altura
+                const MAX_HEIGHT = 100;
                 if (targetHeight > MAX_HEIGHT) {
                     targetHeight = MAX_HEIGHT;
                     targetWidth = targetHeight * aspect;
                 }
 
                 ctx.drawImage(img, x - (targetWidth / 2), y - (targetHeight / 2), targetWidth, targetHeight);
-            } else { 
-                ctx.fillStyle = "rgba(255, 0, 128, 0.4)"; 
-                ctx.fillRect(x - (baseWidth / 2), y - (baseWidth / 2), baseWidth, baseWidth); 
+            } else {
+                ctx.fillStyle = "rgba(255, 0, 128, 0.4)";
+                ctx.fillRect(x - (baseWidth / 2), y - (baseWidth / 2), baseWidth, baseWidth);
             }
         }
 
@@ -519,13 +642,13 @@
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
                 if (!player.isCrashing) obs.y += obs.speed;
-                obs.x += (obs.targetX - obs.x) * 0.1; 
+                obs.x += (obs.targetX - obs.x) * 0.1;
 
                 let sprite = null;
                 if (obs.type === 'cocido') sprite = obstacleAnimToggle === 0 ? tazaA : tazaB;
                 else if (obs.type === 'maleta') {
                     sprite = obs.variant === 'azul' ? (obstacleAnimToggle === 0 ? maletaAzulA : maletaAzulB) : obs.variant === 'roja' ? (obstacleAnimToggle === 0 ? maletaRojaA : maletaRojaB) : (obstacleAnimToggle === 0 ? maletaLilaA : maletaLilaB);
-                } 
+                }
                 else if (obs.type === 'anciano') sprite = obstacleAnimToggle === 0 ? ancianoBaja1 : ancianoBaja2;
                 else if (obs.type === 'turista_pesada') sprite = obstacleAnimToggle === 0 ? turistaPesada1 : turistaPesada2;
                 else if (obs.type === 'señora') sprite = obstacleAnimToggle === 0 ? señoraBajaA : señoraBajaB;
@@ -533,7 +656,7 @@
                 else if (obs.type === 'empresario') sprite = obstacleAnimToggle === 0 ? empresarioA : empresarioB;
                 else if (obs.type === 'parada_foto') sprite = imgParadaFoto;
                 else if (obs.type === 'turista_sentado') sprite = imgTuristaSentado;
-                else if (obs.type === 'hincha_paraguay') sprite = imgHinchaParaguay; 
+                else if (obs.type === 'hincha_paraguay') sprite = imgHinchaParaguay;
                 else if (obs.type === 'turista_sube') sprite = obstacleAnimToggle === 0 ? turistaSubeA : turistaSubeB;
                 else if (obs.type === 'turista_sube_solo') sprite = obstacleAnimToggle === 0 ? turistaSubeSoloA : turistaSubeSoloB;
                 else if (obs.type === 'corredor') sprite = obstacleAnimToggle === 0 ? corredoresCarga[obs.variant].c1 : corredoresCarga[obs.variant].c2;
@@ -572,3 +695,8 @@
     </script>
 </body>
 </html>
+
+
+
+
+
