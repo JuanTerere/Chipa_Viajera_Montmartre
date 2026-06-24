@@ -180,57 +180,55 @@
         let lanePositions = []; 
         const SPRITE_SIZE = 105; 
 
-        // --- CARGA DE ASSETS CORREGIDA SEGÚN GITHUB ---
+        // --- CARGA DE ASSETS CORREGIDA ---
         const escaleras = [new Image(), new Image(), new Image(), new Image(), new Image(), new Image()];
-        escaleras[0].src = 'imágenes/Escalera París.png'; escaleras[1].src = 'imágenes/Escalera París1.png';
-        escaleras[2].src = 'imágenes/Escalera París2.png'; escaleras[3].src = 'imágenes/Escalera París3.png';
-        escaleras[4].src = 'imágenes/Escalera París4.png'; escaleras[5].src = 'imágenes/Escalera París5.png';
+        escaleras[0].src = 'imagenes/Escalera París.png'; escaleras[1].src = 'imagenes/Escalera París1.png';
+        escaleras[2].src = 'imagenes/Escalera París2.png'; escaleras[3].src = 'imagenes/Escalera París3.png';
+        escaleras[4].src = 'imagenes/Escalera París4.png'; escaleras[5].src = 'imagenes/Escalera París5.png';
 
-        const imgRunD1 = new Image(); imgRunD1.src = 'imágenes/chipa_run_derecha1.png';
-        const imgRunD2 = new Image(); imgRunD2.src = 'imágenes/chipa_run_derecha2.png';
-        const imgJumpD = new Image(); imgJumpD.src = 'imágenes/chipa_jump_derecha.png';
-        const imgRunI1 = new Image(); imgRunI1.src = 'imágenes/chipa_run_izquierda1.png';
-        const imgRunI2 = new Image(); imgRunI2.src = 'imágenes/chipa_run_izquierda2.png';
-        const imgJumpI = new Image(); imgJumpI.src = 'imágenes/chipa_jump_izquierda.png'; 
-        const imgCrash = new Image(); imgCrash.src = 'imágenes/chipa_crash.png'; 
+        const imgRunD1 = new Image(); imgRunD1.src = 'imagenes/chipa_run_derecha1.png';
+        const imgRunD2 = new Image(); imgRunD2.src = 'imagenes/chipa_run_derecha2.png';
+        const imgJumpD = new Image(); imgJumpD.src = 'imagenes/chipa_jump_derecha.png';
+        const imgRunI1 = new Image(); imgRunI1.src = 'imagenes/chipa_run_izquierda1.png';
+        const imgRunI2 = new Image(); imgRunI2.src = 'imagenes/chipa_run_izquierda2.png';
+        const imgJumpI = new Image(); imgJumpI.src = 'imagenes/chipa_jump_izquierda.png'; 
+        const imgCrash = new Image(); imgCrash.src = 'imagenes/chipa_crash.png'; 
 
-        // Como no existía maleta azul en tu Github, referenciamos la lila para evitar el cuadro rosa
-        const maletaAzulA = new Image(); maletaAzulA.src = 'imágenes/Maleta lilaA.png';
-        const maletaAzulB = new Image(); maletaAzulB.src = 'imágenes/Maleta lilaB.png';
+        const maletaAzulA = new Image(); maletaAzulA.src = 'imagenes/Maleta lilaA.png';
+        const maletaAzulB = new Image(); maletaAzulB.src = 'imagenes/Maleta lilaB.png';
         
-        const maletaRojaA = new Image(); maletaRojaA.src = 'imágenes/Maleta rojaA.png';
-        const maletaRojaB = new Image(); maletaRojaB.src = 'imágenes/Maleta rojaB.png';
-        const maletaLilaA = new Image(); maletaLilaA.src = 'imágenes/Maleta lilaA.png';
-        const maletaLilaB = new Image(); maletaLilaB.src = 'imágenes/Maleta lilaB.png';
+        const maletaRojaA = new Image(); maletaRojaA.src = 'imagenes/Maleta rojaA.png';
+        const maletaRojaB = new Image(); maletaRojaB.src = 'imagenes/Maleta rojaB.png';
+        const maletaLilaA = new Image(); maletaLilaA.src = 'imagenes/Maleta lilaA.png';
+        const maletaLilaB = new Image(); maletaLilaB.src = 'imagenes/Maleta lilaB.png';
 
-        const ancianoBaja1 = new Image(); ancianoBaja1.src = 'imágenes/Ancianos bajando1.png';
-        const ancianoBaja2 = new Image(); ancianoBaja2.src = 'imágenes/Ancianos bajando2.png';
-        const turistaPesada1 = new Image(); turistaPesada1.src = 'imágenes/Turista_pesada1.png';
-        const turistaPesada2 = new Image(); turistaPesada2.src = 'imágenes/Turista_pesada2.png';
-        const señoraBajaA = new Image(); señoraBajaA.src = 'imágenes/Señora_bajandoA.png';
-        const señoraBajaB = new Image(); señoraBajaB.src = 'imágenes/Señora_bajandoB.png';
-        const imgParadaFoto = new Image(); imgParadaFoto.src = 'imágenes/Parada_foto.png';
-        const imgTuristaSentado = new Image(); imgTuristaSentado.src = 'imágenes/Turista sentado.png';
-        const imgHinchaParaguay = new Image(); imgHinchaParaguay.src = 'imágenes/hincha de Paraguay.png';
-        const ancianaBolsasA = new Image(); ancianaBolsasA.src = 'imágenes/Anciana_bolsasA.png';
-        const ancianaBolsasB = new Image(); ancianaBolsasB.src = 'imágenes/Anciana_bolsasB.png';
-        const empresarioA = new Image(); empresarioA.src = 'imágenes/EmpresarioA.png';
-        const empresarioB = new Image(); empresarioB.src = 'imágenes/EmpresarioB.png';
-        const turistaSubeA = new Image(); turistaSubeA.src = 'imágenes/Subiendo TuristaA.png';
-        const turistaSubeB = new Image(); turistaSubeB.src = 'imágenes/Subiendo TuristaB.png';
-        const turistaSubeSoloA = new Image(); turistaSubeSoloA.src = 'imágenes/Turista sube soloA.png'; 
-        const turistaSubeSoloB = new Image(); turistaSubeSoloB.src = 'imágenes/Turista sube soloB.png';
-        const tazaA = new Image(); tazaA.src = 'imágenes/TazaA.png';
-        const tazaB = new Image(); tazaB.src = 'imágenes/TazaB.png';
+        const ancianoBaja1 = new Image(); ancianoBaja1.src = 'imagenes/Ancianos bajando1.png';
+        const ancianoBaja2 = new Image(); ancianoBaja2.src = 'imagenes/Ancianos bajando2.png';
+        const turistaPesada1 = new Image(); turistaPesada1.src = 'imagenes/Turista_pesada1.png';
+        const turistaPesada2 = new Image(); turistaPesada2.src = 'imagenes/Turista_pesada2.png';
+        const señoraBajaA = new Image(); señoraBajaA.src = 'imagenes/Señora_bajandoA.png';
+        const señoraBajaB = new Image(); señoraBajaB.src = 'imagenes/Señora_bajandoB.png';
+        const imgParadaFoto = new Image(); imgParadaFoto.src = 'imagenes/Parada_foto.png';
+        const imgTuristaSentado = new Image(); imgTuristaSentado.src = 'imagenes/Turista sentado.png';
+        const imgHinchaParaguay = new Image(); imgHinchaParaguay.src = 'imagenes/hincha de Paraguay.png';
+        const ancianaBolsasA = new Image(); ancianaBolsasA.src = 'imagenes/Anciana_bolsasA.png';
+        const ancianaBolsasB = new Image(); ancianaBolsasB.src = 'imagenes/Anciana_bolsasB.png';
+        const empresarioA = new Image(); empresarioA.src = 'imagenes/EmpresarioA.png';
+        const empresarioB = new Image(); empresarioB.src = 'imagenes/EmpresarioB.png';
+        const turistaSubeA = new Image(); turistaSubeA.src = 'imagenes/Subiendo TuristaA.png';
+        const turistaSubeB = new Image(); turistaSubeB.src = 'imagenes/Subiendo TuristaB.png';
+        const turistaSubeSoloA = new Image(); turistaSubeSoloA.src = 'imagenes/Turista sube soloA.png'; 
+        const turistaSubeSoloB = new Image(); turistaSubeSoloB.src = 'imagenes/Turista sube soloB.png';
+        const tazaA = new Image(); tazaA.src = 'imagenes/TazaA.png';
+        const tazaB = new Image(); tazaB.src = 'imagenes/TazaB.png';
 
-        // Nombres corregidos EXACTAMENTE como están en tu Github
         const corredoresCarga = [
             { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }
         ];
-        corredoresCarga[0].c1.src = 'imágenes/Corredor_subu_Corre1.png'; corredoresCarga[0].c2.src = 'imágenes/Corredor_subu_Corre2.png';
-        corredoresCarga[1].c1.src = 'imágenes/Corredora_subé_Rojo1.png'; corredoresCarga[1].c2.src = 'imágenes/Corredora_subé_Rojo2.png';
-        corredoresCarga[2].c1.src = 'imágenes/Corredora_subu_Corre1.png'; corredoresCarga[2].c2.src = 'imágenes/Corredora_subu_Corre2.png';
-        const imgJePasse = new Image(); imgJePasse.src = 'imágenes/Je_passe.png';
+        corredoresCarga[0].c1.src = 'imagenes/Corredor_subu_Corre1.png'; corredoresCarga[0].c2.src = 'imagenes/Corredor_subu_Corre2.png';
+        corredoresCarga[1].c1.src = 'imagenes/Corredora_subé_Rojo1.png'; corredoresCarga[1].c2.src = 'imagenes/Corredora_subé_Rojo2.png';
+        corredoresCarga[2].c1.src = 'imagenes/Corredora_subu_Corre1.png'; corredoresCarga[2].c2.src = 'imagenes/Corredora_subu_Corre2.png';
+        const imgJePasse = new Image(); imgJePasse.src = 'imagenes/Je_passe.png';
 
         const player = {
             lane: 1, x: 0, y: 0,
@@ -268,7 +266,6 @@
                 if (img.complete && img.naturalWidth > 0) resolve();
                 else { img.addEventListener('load', resolve, { once: true }); img.addEventListener('error', resolve, { once: true }); }
             }));
-            // CARGA TURBO: Máximo 1.5 segundos esperando, luego arranca sí o sí
             return Promise.race([Promise.all(promesas), new Promise(r => setTimeout(r, 1500))]);
         }
 
@@ -353,7 +350,7 @@
             const nombreCert = document.getElementById("playerName").value.trim() || "Viajero";
             const certImg = new Image();
             certImg.crossOrigin = "anonymous";
-            certImg.src = "imágenes/Certificado de puntos_Montmartre.jpg"; 
+            certImg.src = "imagenes/Certificado de puntos_Montmartre.jpg"; 
             certImg.onload = function() {
                 const c = document.createElement("canvas");
                 c.width = certImg.naturalWidth; c.height = certImg.naturalHeight;
@@ -361,7 +358,6 @@
                 cx.drawImage(certImg, 0, 0);
                 cx.fillStyle = "#111111"; cx.font = `bold ${c.width * 0.045}px sans-serif`; cx.textAlign = "center";
                 
-                // TEXTOS DEL CERTIFICADO ENCAJADOS EN EL ESPACIO VERDE
                 cx.fillText(nombreCert.toUpperCase(), c.width * 0.5, c.height * 0.75);
                 
                 cx.fillStyle = "#d35400"; cx.font = `bold ${c.width * 0.055}px Impact, sans-serif`;
@@ -417,7 +413,6 @@
                 const selectedLane = validLanes[Math.floor(Math.random() * validLanes.length)];
                 const rand = Math.random();
 
-                // MULTIPLICADORES DE TAMAÑO TURISTAS AUMENTADOS UN 25% (1.25)
                 if (rand < 0.08) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'cocido', width: SPRITE_SIZE * 0.70, speed: worldSpeed }); } 
                 else if (rand < 0.20) {
                     let color = Math.random() > 0.66 ? 'roja' : Math.random() > 0.33 ? 'lila' : 'azul';
@@ -436,7 +431,6 @@
             }
         }
 
-        // IA OPTIMIZADA: Evita lag al no crear arrays innecesarios
         function aplicarIAEsquive() {
             for (let i = 0; i < obstacles.length; i++) {
                 let obsA = obstacles[i];
@@ -456,14 +450,12 @@
             }
         }
 
-        // CONTROL DE PROPORCIONES ACTUALIZADO
         function drawImageSafely(img, x, y, baseWidth) {
             if (img && img.complete && img.naturalWidth > 0) {
                 if (!img.aspectRatio) img.aspectRatio = img.naturalWidth / img.naturalHeight;
                 let targetWidth = baseWidth;
                 let targetHeight = baseWidth / img.aspectRatio;
 
-                // ALTURA MÁXIMA AUMENTADA A 115 PARA LOS TURISTAS GRANDES
                 const MAX_HEIGHT = 115; 
                 if (targetHeight > MAX_HEIGHT) {
                     targetHeight = MAX_HEIGHT;
@@ -561,7 +553,6 @@
                 if (obs.y > canvas.height + 80 || obs.y < -80) obstacles.splice(i, 1);
             }
 
-            // CHIPA 5% MÁS CHICA (Se reduce el 60 a 57)
             if (player.isCrashing) {
                 if (imgCrash?.complete) drawImageSafely(imgCrash, player.x, player.y, 57);
             } else if (player.isJumpingHandrail) {
