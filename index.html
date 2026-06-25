@@ -24,7 +24,11 @@
         #hud-cocidos { white-space: nowrap; color: #f1c40f; }
         #hud-players { white-space: nowrap; color: #5dade2; }
         canvas { flex-grow: 1; width: 100%; background: #000; image-rendering: pixelated; }
-        #touch-buffer { flex-shrink: 0; height: 68px; background: #000; }
+        #touch-buffer {
+            flex-shrink: 0; height: 52px; background: #000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #touch-buffer span { color: #f1c40f; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; }
         
         #level-banner {
             position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%);
@@ -33,14 +37,28 @@
             z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.5s ease;
             text-align: center; width: 100%; letter-spacing: 2px;
         }
-        #welcome-screen {
-            position: absolute; inset: 0; background: #000; color: #fff;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 12px; padding: 24px 22px; text-align: center; z-index: 45;
+        #life-bonus-banner {
+            position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%);
+            color: #ff4d7e; font-family: 'Courier New', Courier, monospace; font-size: 28px;
+            font-weight: bold; text-shadow: 2px 2px 0px #fff, -2px -2px 0px #00ffcc;
+            z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.5s ease;
+            text-align: center; width: 100%; letter-spacing: 2px;
         }
-        #welcome-img { max-width: 58%; max-height: 26vh; object-fit: contain; margin-bottom: 4px; }
+        #welcome-screen {
+            position: absolute; inset: 0; background: #000;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 45;
+        }
+        .welcome-card {
+            width: 88%; max-height: 85vh; max-height: 92dvh;
+            background: rgba(15, 15, 25, 0.98); border: 3px solid #ff0055; border-radius: 12px;
+            box-shadow: 0px 0px 25px rgba(255, 0, 85, 0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 12px; padding: 22px 20px; text-align: center; color: #fff; overflow-y: auto;
+        }
+        #welcome-img { max-width: 58%; max-height: 24vh; object-fit: contain; margin-bottom: 4px; }
         .welcome-text { font-size: 14px; line-height: 1.55; margin: 0; max-width: 320px; }
-        .welcome-icon { width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin: 0 2px; }
+        .welcome-icon { width: 32px; height: 32px; vertical-align: middle; object-fit: contain; margin: 0 3px; }
         #welcome-loading {
             font-family: 'Courier New', Courier, monospace; font-size: 15px;
             letter-spacing: 2px; margin-top: 8px; color: #aaa;
@@ -96,12 +114,15 @@
             <div id="hud-lives">❤️ x3</div>
         </div>
         <div id="level-banner">NIVEL 1</div>
+        <div id="life-bonus-banner">+1 ❤️</div>
         <div id="welcome-screen">
-            <img id="welcome-img" src="imagenes/Chipa Viajera con maletas1.png" alt="Chipa Viajera" onerror="this.style.display='none'">
-            <p class="welcome-text">¡Bienvenido! Este es el juego de La Chipa Viajera en Montmartre, París. Tu objetivo es subir sin chocar con las maletas ni los turistas.</p>
-            <p class="welcome-text">Si atrapas 10 <img class="welcome-icon" src="imagenes/TazaA.png" alt="cocido" onerror="this.style.display='none'"> cocidos, sumás una vida.</p>
-            <p id="welcome-loading">Cargando...</p>
-            <p class="welcome-footer">Matías Brizzio &copy;Juan Tereré 2026</p>
+            <div class="welcome-card">
+                <img id="welcome-img" src="imagenes/Chipa Viajera con maletas1.png" alt="Chipa Viajera" onerror="this.style.display='none'">
+                <p class="welcome-text">¡Bienvenido! Este es el juego de La Chipa Viajera en Montmartre, París. Tu objetivo es subir sin chocar con las maletas ni los turistas.</p>
+                <p class="welcome-text">Si atrapas 10 <img class="welcome-icon" src="imagenes/TazaA.png" alt="cocido" onerror="this.style.display='none'"> cocidos, sumás una vida.</p>
+                <p id="welcome-loading">Cargando...</p>
+                <p class="welcome-footer">Matías Brizzio &copy;Juan Tereré 2026</p>
+            </div>
         </div>
 
         <div id="game-over-screen" class="modal-screen">
@@ -141,7 +162,7 @@
         </div>
 
         <canvas id="gameCanvas"></canvas>
-        <div id="touch-buffer"></div>
+        <div id="touch-buffer"><span>Matías Brizzio &copy;Juan Tereré 2026</span></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -269,7 +290,7 @@
 
         function resizeCanvas() {
             canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-            player.y = canvas.height - 150; 
+            player.y = canvas.height - 166; 
             let w = canvas.width;
             lanePositions = [w * 0.22, w * 0.38, w * 0.50, w * 0.62, w * 0.78];
             player.x = lanePositions[player.lane];
@@ -310,6 +331,12 @@
             banner.innerText = currentLevel > 10 ? `NIVEL ULTRA 🔥` : `NIVEL ${currentLevel}`;
             banner.style.opacity = "1";
             setTimeout(() => { banner.style.opacity = "0"; }, 1800);
+        }
+
+        function showLifeBonusBanner() {
+            const banner = document.getElementById("life-bonus-banner");
+            banner.style.opacity = "1";
+            setTimeout(() => { banner.style.opacity = "0"; }, 1500);
         }
 
         function showGameOverScreen(won = false) {
@@ -526,7 +553,7 @@
                 else if (rand < 0.82) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'hincha_paraguay', width: SPRITE_SIZE * 0.9, speed: worldSpeed }); }
                 else if (rand < 0.88) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube', width: SPRITE_SIZE * 1.35, speed: worldSpeed * 0.65 }); }
                 else if (rand < 0.94) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube_solo', width: SPRITE_SIZE * 1.35, speed: worldSpeed * 0.85 }); }
-                else { if (!alerts.some(a => a.lane === selectedLane)) alerts.push({ lane: selectedLane, x: lanePositions[selectedLane], y: canvas.height - 140, duration: 85 }); }
+                else { if (!alerts.some(a => a.lane === selectedLane)) alerts.push({ lane: selectedLane, x: lanePositions[selectedLane], y: canvas.height - 156, duration: 85 }); }
             }
         }
 
@@ -644,7 +671,7 @@
                     if (Math.abs(obs.y - player.y) < 42) {
                         if (obs.type === 'cocido') {
                             score += 100; cocidosCount++;
-                            if (cocidosCount >= 10) { cocidosCount = 0; lives++; }
+                            if (cocidosCount >= 10) { cocidosCount = 0; lives++; showLifeBonusBanner(); }
                             obstacles.splice(i, 1); continue;
                         } else { triggerCrash(); obs.hasCrashed = true; continue; }
                     }
