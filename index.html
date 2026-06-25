@@ -9,10 +9,10 @@
         body {
             margin: 0; padding: 0; background-color: #000;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Arial', sans-serif; height: 100vh; overflow: hidden;
+            font-family: 'Arial', sans-serif; height: 100vh; height: 100dvh; overflow: hidden;
         }
         #game-container {
-            position: relative; width: 100%; max-width: 420px; height: 100vh;
+            position: relative; width: 100%; max-width: 420px; height: 100vh; height: 100dvh;
             background: #000; display: flex; flex-direction: column;
         }
         #ui-layer {
@@ -24,6 +24,7 @@
         #hud-cocidos { white-space: nowrap; color: #f1c40f; }
         #hud-players { white-space: nowrap; color: #5dade2; }
         canvas { flex-grow: 1; width: 100%; background: #000; image-rendering: pixelated; }
+        #touch-buffer { flex-shrink: 0; height: 68px; background: #000; }
         
         #level-banner {
             position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%);
@@ -32,34 +33,41 @@
             z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.5s ease;
             text-align: center; width: 100%; letter-spacing: 2px;
         }
-        #loading-screen {
+        #welcome-screen {
             position: absolute; inset: 0; background: #000; color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Courier New', Courier, monospace; font-size: 18px;
-            z-index: 40; letter-spacing: 2px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 12px; padding: 24px 22px; text-align: center; z-index: 45;
         }
+        #welcome-img { max-width: 58%; max-height: 26vh; object-fit: contain; margin-bottom: 4px; }
+        .welcome-text { font-size: 14px; line-height: 1.55; margin: 0; max-width: 320px; }
+        .welcome-icon { width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin: 0 2px; }
+        #welcome-loading {
+            font-family: 'Courier New', Courier, monospace; font-size: 15px;
+            letter-spacing: 2px; margin-top: 8px; color: #aaa;
+        }
+        .welcome-footer { font-size: 11px; color: #777; margin-top: 4px; }
 
         /* Modales de Interfaz */
         .modal-screen {
             display: none; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); width: 88%; max-height: 85%;
+            transform: translate(-50%, -50%); width: 88%; max-height: 85vh; max-height: 92dvh;
             background: rgba(15, 15, 25, 0.98); border: 3px solid #ff0055;
-            border-radius: 12px; padding: 22px 15px; text-align: center;
+            border-radius: 12px; padding: 16px 14px; text-align: center;
             color: #fff; z-index: 30; box-shadow: 0px 0px 25px rgba(255, 0, 85, 0.5);
             flex-direction: column; overflow-y: auto;
         }
         .go-title {
-            font-family: 'Courier New', Courier, monospace; font-size: 22px;
-            font-weight: bold; color: #ff0055; margin-bottom: 12px; line-height: 1.3;
+            font-family: 'Courier New', Courier, monospace; font-size: 20px;
+            font-weight: bold; color: #ff0055; margin-bottom: 8px; line-height: 1.3;
         }
-        .score-highlight { color: #f1c40f; font-weight: bold; font-size: 22px; display: block; margin: 8px 0; }
+        .score-highlight { color: #f1c40f; font-weight: bold; font-size: 20px; display: block; margin: 6px 0; }
         
         .go-input, .go-select {
-            padding: 10px; width: 100%; margin-bottom: 12px; border-radius: 6px;
+            padding: 8px; width: 100%; margin-bottom: 9px; border-radius: 6px;
             border: 1px solid #555; background: #222; color: #fff; text-align: center; font-size: 15px;
         }
         .go-btn {
-            display: block; width: 100%; padding: 11px; margin: 6px 0;
+            display: block; width: 100%; padding: 9px; margin: 4px 0;
             border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;
         }
         .btn-whatsapp { background-color: #25D366; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; }
@@ -77,9 +85,6 @@
         .rank-item-left { display: flex; gap: 8px; align-items: center; }
         .rank-pos { width: 24px; font-weight: bold; }
     </style>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -91,7 +96,13 @@
             <div id="hud-lives">❤️ x3</div>
         </div>
         <div id="level-banner">NIVEL 1</div>
-        <div id="loading-screen">CARGANDO... 🥮</div>
+        <div id="welcome-screen">
+            <img id="welcome-img" src="imagenes/Chipa Viajera con maletas1.png" alt="Chipa Viajera" onerror="this.style.display='none'">
+            <p class="welcome-text">¡Bienvenido! Este es el juego de La Chipa Viajera en Montmartre, París. Tu objetivo es subir sin chocar con las maletas ni los turistas.</p>
+            <p class="welcome-text">Si atrapas 10 <img class="welcome-icon" src="imagenes/TazaA.png" alt="cocido" onerror="this.style.display='none'"> cocidos, sumás una vida.</p>
+            <p id="welcome-loading">Cargando...</p>
+            <p class="welcome-footer">Matías Brizzio &copy;Juan Tereré 2026</p>
+        </div>
 
         <div id="game-over-screen" class="modal-screen">
             <div id="go-title" class="go-title">Cargando resultado...</div>
@@ -130,7 +141,11 @@
         </div>
 
         <canvas id="gameCanvas"></canvas>
+        <div id="touch-buffer"></div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -254,7 +269,7 @@
 
         function resizeCanvas() {
             canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-            player.y = canvas.height - 130; 
+            player.y = canvas.height - 150; 
             let w = canvas.width;
             lanePositions = [w * 0.22, w * 0.38, w * 0.50, w * 0.62, w * 0.78];
             player.x = lanePositions[player.lane];
@@ -263,7 +278,7 @@
         window.addEventListener('load', () => { 
             resizeCanvas(); 
             precargarAssets().then(() => {
-                document.getElementById("loading-screen").style.display = "none";
+                document.getElementById("welcome-screen").style.display = "none";
                 showLevelBanner(); loop();
             });
         });
@@ -279,7 +294,7 @@
                     img.addEventListener('error', () => { fallidas.push(img.src.split('/').pop()); resolve(); }, { once: true });
                 }
             }));
-            return Promise.race([Promise.all(promesas), new Promise(r => setTimeout(r, 1500))]).then(() => {
+            return Promise.race([Promise.all(promesas), new Promise(r => setTimeout(r, 4000))]).then(() => {
                 if (fallidas.length > 0) {
                     console.error("No se pudieron cargar estas imagenes:", fallidas);
                     const aviso = document.createElement("div");
@@ -511,7 +526,7 @@
                 else if (rand < 0.82) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'hincha_paraguay', width: SPRITE_SIZE * 0.9, speed: worldSpeed }); }
                 else if (rand < 0.88) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube', width: SPRITE_SIZE * 1.35, speed: worldSpeed * 0.65 }); }
                 else if (rand < 0.94) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'turista_sube_solo', width: SPRITE_SIZE * 1.35, speed: worldSpeed * 0.85 }); }
-                else { if (!alerts.some(a => a.lane === selectedLane)) alerts.push({ lane: selectedLane, x: lanePositions[selectedLane], y: canvas.height - 80, duration: 85 }); }
+                else { if (!alerts.some(a => a.lane === selectedLane)) alerts.push({ lane: selectedLane, x: lanePositions[selectedLane], y: canvas.height - 140, duration: 85 }); }
             }
         }
 
