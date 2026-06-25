@@ -371,6 +371,8 @@
 
         function mostrarAvisoImagenesFaltantes(fallidas) {
             console.error("No se pudieron cargar estas imagenes:", fallidas);
+            // Solo se muestra en pantalla si se agrega ?debug a la URL (nunca a un jugador normal).
+            if (!new URLSearchParams(window.location.search).has('debug')) return;
             const aviso = document.createElement("div");
             aviso.style.cssText = "position:absolute;top:60px;left:8px;right:8px;background:rgba(200,0,0,0.92);color:#fff;font-size:11px;padding:8px;border-radius:6px;z-index:50;max-height:35%;overflow-y:auto;text-align:left;";
             aviso.innerHTML = `<b>Imagenes no encontradas (revisa el nombre exacto en GitHub):</b><br>${fallidas.join('<br>')}<br><span style="cursor:pointer;text-decoration:underline;" onclick="this.parentElement.remove()">cerrar</span>`;
@@ -642,7 +644,7 @@
 
                 ctx.drawImage(img, x - (targetWidth / 2), y - (targetHeight / 2), targetWidth, targetHeight);
             } else { 
-                ctx.fillStyle = "rgba(255, 0, 128, 0.4)"; 
+                ctx.fillStyle = "rgba(120, 120, 120, 0.35)"; 
                 ctx.fillRect(x - (baseWidth / 2), y - (baseWidth / 2), baseWidth, baseWidth); 
             }
         }
