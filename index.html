@@ -233,7 +233,8 @@
         let lanePositions = []; 
         const SPRITE_SIZE = 105; 
 
-        // --- CARGA DE ASSETS CORREGIDA ---
+        // --- CARGA DE ASSETS: las críticas (fondo + Chipa) arrancan ya. Las secundarias se piden
+        // recién cuando las críticas terminan, para no competir por el ancho de banda en datos móviles. ---
         const escaleras = [new Image(), new Image(), new Image(), new Image(), new Image(), new Image()];
         escaleras[0].src = 'imagenes/Escalera París.png'; escaleras[1].src = 'imagenes/Escalera París1.png';
         escaleras[2].src = 'imagenes/Escalera París2.png'; escaleras[3].src = 'imagenes/Escalera París3.png';
@@ -247,41 +248,46 @@
         const imgJumpI = new Image(); imgJumpI.src = 'imagenes/chipa_jump_izquierda.png'; 
         const imgCrash = new Image(); imgCrash.src = 'imagenes/chipa_crash.png'; 
 
-        const maletaAzulA = new Image(); maletaAzulA.src = 'imagenes/Maleta azulA.png';
-        const maletaAzulB = new Image(); maletaAzulB.src = 'imagenes/Maleta azulB.png';
-        
-        const maletaRojaA = new Image(); maletaRojaA.src = 'imagenes/Maleta rojaA.png';
-        const maletaRojaB = new Image(); maletaRojaB.src = 'imagenes/Maleta rojaB.png';
-        const maletaLilaA = new Image(); maletaLilaA.src = 'imagenes/Maleta lilaA.png';
-        const maletaLilaB = new Image(); maletaLilaB.src = 'imagenes/Maleta lilaB.png';
-
-        const ancianoBaja1 = new Image(); ancianoBaja1.src = 'imagenes/Ancianos bajando1.png';
-        const ancianoBaja2 = new Image(); ancianoBaja2.src = 'imagenes/Ancianos bajando2.png';
-        const turistaPesada1 = new Image(); turistaPesada1.src = 'imagenes/Turista_pesada1.png';
-        const turistaPesada2 = new Image(); turistaPesada2.src = 'imagenes/Turista_pesada2.png';
-        const señoraBajaA = new Image(); señoraBajaA.src = 'imagenes/Señora_bajandoA.png';
-        const señoraBajaB = new Image(); señoraBajaB.src = 'imagenes/Señora_bajandoB.png';
-        const imgParadaFoto = new Image(); imgParadaFoto.src = 'imagenes/Parada_foto.png';
-        const imgTuristaSentado = new Image(); imgTuristaSentado.src = 'imagenes/Turista sentado.png';
-        const imgHinchaParaguay = new Image(); imgHinchaParaguay.src = 'imagenes/hincha de Paraguay.png';
-        const ancianaBolsasA = new Image(); ancianaBolsasA.src = 'imagenes/Anciana_bolsasA.png';
-        const ancianaBolsasB = new Image(); ancianaBolsasB.src = 'imagenes/Anciana_bolsasB.png';
-        const empresarioA = new Image(); empresarioA.src = 'imagenes/EmpresarioA.png';
-        const empresarioB = new Image(); empresarioB.src = 'imagenes/EmpresarioB.png';
-        const turistaSubeA = new Image(); turistaSubeA.src = 'imagenes/Subiendo TuristaA.png';
-        const turistaSubeB = new Image(); turistaSubeB.src = 'imagenes/Subiendo TuristaB.png';
-        const turistaSubeSoloA = new Image(); turistaSubeSoloA.src = 'imagenes/Turista sube soloA.png'; 
-        const turistaSubeSoloB = new Image(); turistaSubeSoloB.src = 'imagenes/Turista sube soloB.png';
-        const tazaA = new Image(); tazaA.src = 'imagenes/TazaA.png';
-        const tazaB = new Image(); tazaB.src = 'imagenes/TazaB.png';
-
+        // Secundarias: se crean sin pedir el archivo todavía (sin .src).
+        const maletaRojaA = new Image(); const maletaRojaB = new Image();
+        const maletaLilaA = new Image(); const maletaLilaB = new Image();
+        const ancianoBaja1 = new Image(); const ancianoBaja2 = new Image();
+        const turistaPesada1 = new Image(); const turistaPesada2 = new Image();
+        const señoraBajaA = new Image(); const señoraBajaB = new Image();
+        const imgParadaFoto = new Image();
+        const imgTuristaSentado = new Image();
+        const imgHinchaParaguay = new Image();
+        const ancianaBolsasA = new Image(); const ancianaBolsasB = new Image();
+        const empresarioA = new Image(); const empresarioB = new Image();
+        const turistaSubeA = new Image(); const turistaSubeB = new Image();
+        const turistaSubeSoloA = new Image(); const turistaSubeSoloB = new Image();
+        const tazaA = new Image(); const tazaB = new Image();
         const corredoresCarga = [
             { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }, { c1: new Image(), c2: new Image() }
         ];
-        corredoresCarga[0].c1.src = 'imagenes/Corredor_sube_Corre1.png'; corredoresCarga[0].c2.src = 'imagenes/Corredor_sube_Corre2.png';
-        corredoresCarga[1].c1.src = 'imagenes/Corredora_sube_Rojo1.png'; corredoresCarga[1].c2.src = 'imagenes/Corredora_sube_Rojo2.png';
-        corredoresCarga[2].c1.src = 'imagenes/Corredora_sube_Corre1.png'; corredoresCarga[2].c2.src = 'imagenes/Corredora_sube_Corre2.png';
-        const imgJePasse = new Image(); imgJePasse.src = 'imagenes/Je_passe.png';
+        const imgJePasse = new Image();
+
+        // Rutas de las secundarias, para asignarlas recién cuando toca.
+        const rutasSecundarias = () => {
+            maletaRojaA.src = 'imagenes/Maleta rojaA.png'; maletaRojaB.src = 'imagenes/Maleta rojaB.png';
+            maletaLilaA.src = 'imagenes/Maleta lilaA.png'; maletaLilaB.src = 'imagenes/Maleta lilaB.png';
+            ancianoBaja1.src = 'imagenes/Ancianos bajando1.png'; ancianoBaja2.src = 'imagenes/Ancianos bajando2.png';
+            turistaPesada1.src = 'imagenes/Turista_pesada1.png'; turistaPesada2.src = 'imagenes/Turista_pesada2.png';
+            señoraBajaA.src = 'imagenes/Señora_bajandoA.png'; señoraBajaB.src = 'imagenes/Señora_bajandoB.png';
+            imgParadaFoto.src = 'imagenes/Parada_foto.png';
+            imgTuristaSentado.src = 'imagenes/Turista sentado.png';
+            imgHinchaParaguay.src = 'imagenes/hincha de Paraguay.png';
+            ancianaBolsasA.src = 'imagenes/Anciana_bolsasA.png'; ancianaBolsasB.src = 'imagenes/Anciana_bolsasB.png';
+            empresarioA.src = 'imagenes/EmpresarioA.png'; empresarioB.src = 'imagenes/EmpresarioB.png';
+            turistaSubeA.src = 'imagenes/Subiendo TuristaA.png'; turistaSubeB.src = 'imagenes/Subiendo TuristaB.png';
+            turistaSubeSoloA.src = 'imagenes/Turista sube soloA.png'; turistaSubeSoloB.src = 'imagenes/Turista sube soloB.png';
+            tazaA.src = 'imagenes/TazaA.png'; tazaB.src = 'imagenes/TazaB.png';
+            corredoresCarga[0].c1.src = 'imagenes/Corredor_subu_Corre1.png'; corredoresCarga[0].c2.src = 'imagenes/Corredor_subu_Corre2.png';
+            corredoresCarga[1].c1.src = 'imagenes/Corredora_subé_Rojo1.png'; corredoresCarga[1].c2.src = 'imagenes/Corredora_subé_Rojo2.png';
+            corredoresCarga[2].c1.src = 'imagenes/Corredora_subu_Corre1.png'; corredoresCarga[2].c2.src = 'imagenes/Corredora_subu_Corre2.png';
+            imgJePasse.src = 'imagenes/Je_passe.png';
+        };
+
 
         const player = {
             lane: 1, x: 0, y: 0,
@@ -307,7 +313,7 @@
         function iniciarMusicaSiHaceFalta() {
             if (musicaIniciada) return;
             musicaIniciada = true;
-            audioMusica.src = 'imagenes/musica_fondo.mp3';
+            audioMusica.src = 'imagenes/música_fondo.mp3';
             audioMusica.muted = musicaSilenciada;
             audioMusica.play().catch(() => {});
         }
@@ -340,28 +346,27 @@
         window.addEventListener('resize', resizeCanvas);
 
         function precargarAssets() {
-            // Críticos: lo mínimo para que el juego arranque ya (fondo + personaje).
-            // El resto (turistas, maletas, etc.) sigue descargando en paralelo sin frenar el inicio;
-            // si todavía no llegaron, drawImageSafely ya tiene un reemplazo visual seguro.
+            // Críticas: lo mínimo para que el juego arranque (fondo + Chipa). Se piden ya mismo.
             const imagenesCriticas = [...escaleras, imgRunD1, imgRunD2, imgJumpD, imgRunI1, imgRunI2, imgJumpI, imgCrash];
-            const imagenesSecundarias = [maletaAzulA, maletaAzulB, maletaRojaA, maletaRojaB, maletaLilaA, maletaLilaB, ancianoBaja1, ancianoBaja2, turistaPesada1, turistaPesada2, señoraBajaA, señoraBajaB, imgParadaFoto, imgTuristaSentado, imgHinchaParaguay, ancianaBolsasA, ancianaBolsasB, empresarioA, empresarioB, turistaSubeA, turistaSubeB, turistaSubeSoloA, turistaSubeSoloB, tazaA, tazaB, imgJePasse, ...corredoresCarga.flatMap(c => [c.c1, c.c2])];
 
             const fallidas = [];
             const cargarLista = (lista) => lista.map(img => new Promise(resolve => {
                 if (img.complete && img.naturalWidth > 0) resolve();
                 else {
                     img.addEventListener('load', resolve, { once: true });
-                    img.addEventListener('error', () => { fallidas.push(img.src.split('/').pop()); resolve(); }, { once: true });
+                    img.addEventListener('error', () => { fallidas.push((img.src || '').split('/').pop()); resolve(); }, { once: true });
                 }
             }));
 
-            // Las secundarias arrancan a descargar igual (el navegador ya las pidió al asignarles .src),
-            // pero no hacemos esperar al jugador por ellas.
-            Promise.all(cargarLista(imagenesSecundarias)).then(() => {
-                if (fallidas.length > 0) mostrarAvisoImagenesFaltantes(fallidas);
+            return Promise.race([Promise.all(cargarLista(imagenesCriticas)), new Promise(r => setTimeout(r, 4000))]).then(() => {
+                // Recién ahora, con el juego ya arrancando, pedimos las secundarias (turistas, maletas, etc.)
+                // Así no compiten por el ancho de banda durante los primeros segundos en datos móviles.
+                rutasSecundarias();
+                const imagenesSecundarias = [maletaRojaA, maletaRojaB, maletaLilaA, maletaLilaB, ancianoBaja1, ancianoBaja2, turistaPesada1, turistaPesada2, señoraBajaA, señoraBajaB, imgParadaFoto, imgTuristaSentado, imgHinchaParaguay, ancianaBolsasA, ancianaBolsasB, empresarioA, empresarioB, turistaSubeA, turistaSubeB, turistaSubeSoloA, turistaSubeSoloB, tazaA, tazaB, imgJePasse, ...corredoresCarga.flatMap(c => [c.c1, c.c2])];
+                Promise.all(cargarLista(imagenesSecundarias)).then(() => {
+                    if (fallidas.length > 0) mostrarAvisoImagenesFaltantes(fallidas);
+                });
             });
-
-            return Promise.race([Promise.all(cargarLista(imagenesCriticas)), new Promise(r => setTimeout(r, 4000))]);
         }
 
         function mostrarAvisoImagenesFaltantes(fallidas) {
@@ -587,7 +592,7 @@
 
                 if (rand < 0.08) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'cocido', width: SPRITE_SIZE * 0.60, speed: worldSpeed }); } 
                 else if (rand < 0.20) {
-                    let color = Math.random() > 0.66 ? 'roja' : Math.random() > 0.33 ? 'lila' : 'azul';
+                    let color = Math.random() > 0.5 ? 'roja' : 'lila';
                     obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'maleta', variant: color, width: SPRITE_SIZE * 0.85, speed: worldSpeed * 1.1 });
                 } 
                 else if (rand < 0.29) { obstacles.push({ lane: selectedLane, x: lanePositions[selectedLane], targetX: lanePositions[selectedLane], y: -60, type: 'anciano', width: SPRITE_SIZE * 1.35, speed: worldSpeed * 1.12 }); }
@@ -669,8 +674,12 @@
                 }
             }
 
-            if (escaleras[idxActual]?.complete) ctx.drawImage(escaleras[idxActual], 0, scrollY, canvas.width, canvas.height);
-            if (escaleras[idxSiguiente]?.complete) ctx.drawImage(escaleras[idxSiguiente], 0, scrollY - canvas.height, canvas.width, canvas.height);
+            const fondoActual = escaleras[idxActual];
+            const fondoSiguiente = escaleras[idxSiguiente];
+            if (fondoActual?.complete && fondoActual.naturalWidth > 0) ctx.drawImage(fondoActual, 0, scrollY, canvas.width, canvas.height);
+            else { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, scrollY, canvas.width, canvas.height); }
+            if (fondoSiguiente?.complete && fondoSiguiente.naturalWidth > 0) ctx.drawImage(fondoSiguiente, 0, scrollY - canvas.height, canvas.width, canvas.height);
+            else { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, scrollY - canvas.height, canvas.width, canvas.height); }
 
             const lvlText = currentLevel > 10 ? `Nivel: ULTRA 🔥 | Pts: ${score}` : `Nivel: ${currentLevel}/10 🗼 | Pts: ${score}`;
             if (lvlText !== hudStatsLeftCache) { hudStatsLeftCache = lvlText; hudStatsLeftEl.innerText = lvlText; }
@@ -698,7 +707,7 @@
                 let sprite = null;
                 if (obs.type === 'cocido') sprite = obstacleAnimToggle === 0 ? tazaA : tazaB;
                 else if (obs.type === 'maleta') {
-                    sprite = obs.variant === 'azul' ? (obstacleAnimToggle === 0 ? maletaAzulA : maletaAzulB) : obs.variant === 'roja' ? (obstacleAnimToggle === 0 ? maletaRojaA : maletaRojaB) : (obstacleAnimToggle === 0 ? maletaLilaA : maletaLilaB);
+                    sprite = obs.variant === 'roja' ? (obstacleAnimToggle === 0 ? maletaRojaA : maletaRojaB) : (obstacleAnimToggle === 0 ? maletaLilaA : maletaLilaB);
                 } 
                 else if (obs.type === 'anciano') sprite = obstacleAnimToggle === 0 ? ancianoBaja1 : ancianoBaja2;
                 else if (obs.type === 'turista_pesada') sprite = obstacleAnimToggle === 0 ? turistaPesada1 : turistaPesada2;
