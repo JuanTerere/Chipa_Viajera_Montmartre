@@ -23,6 +23,7 @@
         }
         #hud-cocidos { white-space: nowrap; color: #f1c40f; }
         #hud-players { white-space: nowrap; color: #5dade2; }
+        #btnSound { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0; color: white; }
         canvas { flex-grow: 1; width: 100%; background: #000; image-rendering: pixelated; }
         #touch-buffer {
             flex-shrink: 0; height: 52px; background: #000;
@@ -107,11 +108,18 @@
 <body>
 
     <div id="game-container">
+        <audio id="bgMusic" loop>
+            <source src="imagenes/musica_fondo.mp3" type="audio/mpeg">
+        </audio>
+
         <div id="ui-layer">
             <div id="hud-stats-left">Nivel: 1 | Puntos: 0</div>
             <div id="hud-players">Mundo: <span id="playerCount">...</span> 🌍</div>
             <div id="hud-cocidos">☕ 0/10</div>
-            <div id="hud-lives">❤️ x3</div>
+            <div id="hud-lives" style="display: flex; align-items: center; gap: 5px;">
+                ❤️ x3
+                <button id="btnSound" title="Silenciar/Activar Música">🔊</button>
+            </div>
         </div>
         <div id="level-banner">NIVEL 1</div>
         <div id="life-bonus-banner">+1 ❤️</div>
@@ -207,6 +215,32 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+
+        // --- LÓGICA DE AUDIO ---
+        const bgMusic = document.getElementById("bgMusic");
+        const btnSound = document.getElementById("btnSound");
+        let isMuted = false;
+        bgMusic.volume = 0.4; // Ajusta este valor si la música suena muy fuerte o muy bajo
+
+        function iniciarMusica() {
+            if (!isMuted) {
+                bgMusic.play().catch(e => console.log("Esperando interacción para iniciar el audio..."));
+            }
+        }
+        
+        // Iniciar música en la primera interacción (requerido por navegadores)
+        document.body.addEventListener("click", iniciarMusica, { once: true });
+        document.body.addEventListener("touchstart", iniciarMusica, { once: true });
+
+        btnSound.addEventListener("click", (e) => {
+            e.stopPropagation(); // Evita que se disparen otros clics en la pantalla
+            isMuted = !isMuted;
+            bgMusic.muted = isMuted;
+            btnSound.innerText = isMuted ? "🔇" : "🔊";
+            if (!isMuted) {
+                bgMusic.play().catch(e => {});
+            }
+        });
 
         let isPlaying = true; 
         let frameCount = 0;
@@ -630,7 +664,7 @@
             const cocText = `☕ ${cocidosCount}/10`;
             if (cocText !== hudCocidosCache) { hudCocidosCache = cocText; hudCocidosEl.innerText = cocText; }
             const livText = `❤️ x${lives}`;
-            if (livText !== hudLivesCache) { hudLivesCache = livText; hudLivesEl.innerText = livText; }
+            if (livText !== hudLivesCache) { hudLivesCache = livText; hudLivesEl.innerHTML = `❤️ x${lives} <button id="btnSound" title="Silenciar/Activar Música">🔊</button>`; }
 
             for (let i = alerts.length - 1; i >= 0; i--) {
                 let al = alerts[i]; if (!player.isCrashing) al.duration--;
